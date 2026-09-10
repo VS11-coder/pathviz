@@ -3,14 +3,22 @@ Vercel Serverless Entry Point
 FastAPI app wrapped with Mangum (AWS Lambda / Vercel ASGI adapter).
 """
 from __future__ import annotations
+import sys
+import os
+
+# Ensure the api/ directory is on sys.path so subpackages are found
+_here = os.path.dirname(os.path.abspath(__file__))
+if _here not in sys.path:
+    sys.path.insert(0, _here)
+
 import random
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from mangum import Mangum
 
-from algorithms.graph import AdjacencyListGraph, AdjacencyMatrixGraph, UnionFind, grid_to_graph
+from algorithms.graph import UnionFind, grid_to_graph
 from algorithms.dijkstra import dijkstra
 from algorithms.astar import astar
 from algorithms.bellman_ford import bellman_ford
@@ -31,7 +39,7 @@ app.add_middleware(
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class GridRequest(BaseModel):
-    grid: list[list[int]]
+    grid: List[List[int]]
     source_row: int
     source_col: int
     target_row: int
@@ -42,7 +50,7 @@ class GridRequest(BaseModel):
     allow_diagonal: bool = False
 
 class BenchmarkRequest(BaseModel):
-    sizes: Optional[list[int]] = None
+    sizes: Optional[List[int]] = None
 
 class MazeRequest(BaseModel):
     rows: int = Field(default=25, ge=5, le=80)
@@ -62,12 +70,12 @@ def _build_graph(req: GridRequest):
     )
 
 def _run_algo(algo, graph, src, tgt, rows, cols, heuristic):
-    if algo == "dijkstra":      return dijkstra(graph, src, tgt, rows, cols)
-    elif algo == "astar":       return astar(graph, src, tgt, rows, cols, heuristic)
-    elif algo == "bellman_ford":return bellman_ford(graph, src, tgt, rows, cols)
-    elif algo == "bfs":         return bfs(graph, src, tgt, rows, cols)
-    elif algo == "dfs":         return dfs(graph, src, tgt, rows, cols)
-    elif algo == "greedy":      return greedy(graph, src, tgt, rows, cols, heuristic)
+    if algo == "dijkstra":       return dijkstra(graph, src, tgt, rows, cols)
+    elif algo == "astar":        return astar(graph, src, tgt, rows, cols, heuristic)
+    elif algo == "bellman_ford": return bellman_ford(graph, src, tgt, rows, cols)
+    elif algo == "bfs":          return bfs(graph, src, tgt, rows, cols)
+    elif algo == "dfs":          return dfs(graph, src, tgt, rows, cols)
+    elif algo == "greedy":       return greedy(graph, src, tgt, rows, cols, heuristic)
     else: raise HTTPException(status_code=400, detail=f"Unknown algorithm: {algo}")
 
 # ── Maze generators ───────────────────────────────────────────────────────────
@@ -76,7 +84,8 @@ def _maze_recursive_backtracking(rows, cols):
     cr, cc = (rows - 1) // 2, (cols - 1) // 2
     grid = [[1] * cols for _ in range(rows)]
 
-    def idx(r, c): return (r * 2 + 1, c * 2 + 1)
+    def cell_to_grid(r, c):
+        return (r * 2 + 1, c * 2 + 1)
 
     visited = [[False] * cc for _ in range(cr)]
     stack = [(0, 0)]
@@ -86,7 +95,7 @@ def _maze_recursive_backtracking(rows, cols):
 
     while stack:
         r, c = stack[-1]
-        gr, gc = idx(r, c)
+        gr, gc = cell_to_grid(r, c)
         random.shuffle(directions)
         moved = False
         for dr, dc in directions:
@@ -94,7 +103,7 @@ def _maze_recursive_backtracking(rows, cols):
             if 0 <= nr < cr and 0 <= nc < cc and not visited[nr][nc]:
                 visited[nr][nc] = True
                 grid[gr + dr][gc + dc] = 0
-                ngr, ngc = idx(nr, nc)
+                ngr, ngc = cell_to_grid(nr, nc)
                 grid[ngr][ngc] = 0
                 stack.append((nr, nc))
                 moved = True
@@ -127,22 +136,26 @@ async def run_algorithm(req: GridRequest):
     uf = UnionFind(rows * cols)
     for r in range(rows):
         for c in range(cols):
-            if grid[r][c]: continue
+            if grid[r][c]:
+                continue
             u = r * cols + c
-            for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
-                nr, nc = r+dr, c+dc
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nr, nc = r + dr, c + dc
                 if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 0:
                     uf.union(u, nr * cols + nc)
 
     if not uf.connected(src, tgt):
-        return {"found": False, "visited_order": [], "path": [], "cost": -1,
-                "nodes_visited": 0, "path_length": 0, "time_ms": 0,
-                "algorithm": req.algorithm, "error": "Source and target are not connected."}
+        return {
+            "found": False, "visited_order": [], "path": [], "cost": -1,
+            "nodes_visited": 0, "path_length": 0, "time_ms": 0,
+            "algorithm": req.algorithm, "error": "Source and target are not connected.",
+        }
 
     result = _run_algo(req.algorithm, graph, src, tgt, rows, cols, req.heuristic)
     result["rows"] = rows
     result["cols"] = cols
     return result
+
 
 @app.post("/api/compare")
 async def compare_algorithms(req: GridRequest):
@@ -156,9 +169,11 @@ async def compare_algorithms(req: GridRequest):
             results[algo] = {"error": str(e), "found": False}
     return {"results": results, "rows": rows, "cols": cols}
 
+
 @app.post("/api/benchmark")
 async def benchmark(req: BenchmarkRequest):
     return run_benchmark(req.sizes)
+
 
 @app.post("/api/maze")
 async def generate_maze(req: MazeRequest):
@@ -173,6 +188,7 @@ async def generate_maze(req: MazeRequest):
         source = {"row": 0, "col": 0}
         target = {"row": rows - 1, "col": cols - 1}
     return {"grid": grid, "rows": rows, "cols": cols, "source": source, "target": target}
+
 
 # ── Vercel handler ────────────────────────────────────────────────────────────
 handler = Mangum(app, lifespan="off")

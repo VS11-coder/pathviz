@@ -4,6 +4,13 @@ Runs all algorithms on graphs of increasing size/density and
 returns timing + nodes-visited metrics for comparison charts.
 """
 from __future__ import annotations
+import sys
+import os
+
+_here = os.path.dirname(os.path.abspath(__file__))
+if _here not in sys.path:
+    sys.path.insert(0, _here)
+
 import time
 import random
 from algorithms.graph import AdjacencyListGraph, UnionFind
