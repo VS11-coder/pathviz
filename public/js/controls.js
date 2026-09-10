@@ -138,3 +138,30 @@ const Controls = {
     }
   },
 };
+
+// ── Theme Toggle ──────────────────────────────────────────────────────────────
+const Theme = {
+  _key: 'pathviz-theme',
+
+  init() {
+    // Apply saved theme (or system preference) on load
+    const saved = localStorage.getItem(this._key);
+    if (saved) {
+      this._apply(saved);
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+      this._apply('light');
+    }
+
+    document.getElementById('theme-toggle')?.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      this._apply(current === 'light' ? 'dark' : 'light');
+    });
+  },
+
+  _apply(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(this._key, theme);
+  },
+};
+
+Theme.init();
