@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PathViz — Multi-Algorithm Pathfinding Visualizer</title>
+  <meta name="description" content="Interactive visualizer for Dijkstra, A*, BFS, DFS, Greedy, and Bellman-Ford pathfinding algorithms on configurable grid graphs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="4" cy="28" r="3" fill="url(#g1)"/>
+          <circle cx="16" cy="4" r="3" fill="url(#g1)"/>
+          <circle cx="28" cy="28" r="3" fill="url(#g1)"/>
+          <circle cx="28" cy="14" r="3" fill="url(#g2)"/>
+          <circle cx="10" cy="18" r="3" fill="url(#g2)"/>
+          <path d="M4 28 L16 4 L28 14 L10 18 L28 28" stroke="url(#g1)" stroke-width="1.5" stroke-dasharray="3 2" fill="none"/>
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#6C63FF"/>
+              <stop offset="1" stop-color="#00D4FF"/>
+            </linearGradient>
+            <linearGradient id="g2" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FF6B9D"/>
+              <stop offset="1" stop-color="#FFB347"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">PathViz</h1>
+        <p class="brand-subtitle">Multi-Algorithm Pathfinding Visualizer</p>
+      </div>
+    </div>
+
+    <nav class="tab-nav" id="tab-nav">
+      <button class="tab-btn active" data-tab="visualizer" id="tab-visualizer">
+        <span class="tab-icon">⬡</span> Visualizer
+      </button>
+      <button class="tab-btn" data-tab="compare" id="tab-compare">
+        <span class="tab-icon">⚡</span> Compare
+      </button>
+      <button class="tab-btn" data-tab="benchmark" id="tab-benchmark">
+        <span class="tab-icon">📊</span> Benchmark
+      </button>
+    </nav>
+  </header>
+
+  <!-- ── Main ───────────────────────────────────────────────────── -->
+  <main class="app-main">
+
+    <!-- VISUALIZER TAB -->
+    <section class="tab-panel active" id="panel-visualizer">
+      <div class="viz-layout">
+
+        <!-- Left Control Panel -->
+        <aside class="control-panel glass-panel" id="control-panel">
+          <div class="panel-section">
+            <h2 class="section-title">Algorithm</h2>
+            <div class="algo-grid" id="algo-grid">
+              <button class="algo-btn active" data-algo="astar" id="btn-astar">
+                <span class="algo-icon">★</span>
+                <span class="algo-name">A*</span>
+                <span class="algo-tag optimal">Optimal</span>
+              </button>
+              <button class="algo-btn" data-algo="dijkstra" id="btn-dijkstra">
+                <span class="algo-icon">◈</span>
+                <span class="algo-name">Dijkstra</span>
+                <span class="algo-tag optimal">Optimal</span>
+              </button>
+              <button class="algo-btn" data-algo="bfs" id="btn-bfs">
+                <span class="algo-icon">◎</span>
+                <span class="algo-name">BFS</span>
+                <span class="algo-tag optimal">Optimal</span>
+              </button>
+              <button class="algo-btn" data-algo="dfs" id="btn-dfs">
+                <span class="algo-icon">⟳</span>
+                <span class="algo-name">DFS</span>
+                <span class="algo-tag suboptimal">Suboptimal</span>
+              </button>
+              <button class="algo-btn" data-algo="greedy" id="btn-greedy">
+                <span class="algo-icon">➤</span>
+                <span class="algo-name">Greedy</span>
+                <span class="algo-tag suboptimal">Suboptimal</span>
+              </button>
+              <button class="algo-btn" data-algo="bellman_ford" id="btn-bellman_ford">
+                <span class="algo-icon">⬡</span>
+                <span class="algo-name">Bellman-Ford</span>
+                <span class="algo-tag optimal">Optimal</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-section" id="heuristic-section">
+            <h2 class="section-title">Heuristic</h2>
+            <div class="radio-group" id="heuristic-group">
+              <label class="radio-label">
+                <input type="radio" name="heuristic" value="manhattan" checked id="h-manhattan" /> Manhattan
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="heuristic" value="euclidean" id="h-euclidean" /> Euclidean
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="heuristic" value="diagonal" id="h-diagonal" /> Diagonal
+              </label>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h2 class="section-title">Grid</h2>
+            <label class="field-label">Size
+              <select class="select-field" id="grid-size-select">
+                <option value="15">15 × 15</option>
+                <option value="25" selected>25 × 25</option>
+                <option value="35">35 × 35</option>
+                <option value="50">50 × 50</option>
+                <option value="65">65 × 65</option>
+              </select>
+            </label>
+            <label class="field-label">Graph Type
+              <select class="select-field" id="graph-type-select">
+                <option value="list" selected>Adjacency List</option>
+                <option value="matrix">Adjacency Matrix</option>
+              </select>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="diagonal-checkbox" />
+              <span>Allow Diagonal</span>
+            </label>
+          </div>
+
+          <div class="panel-section">
+            <h2 class="section-title">Maze</h2>
+            <div class="btn-group-col">
+              <button class="btn-secondary" id="btn-maze-recursive">
+                🌀 Recursive Backtracking
+              </button>
+              <button class="btn-secondary" id="btn-maze-random">
+                🎲 Random Walls
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h2 class="section-title">Speed</h2>
+            <div class="speed-control">
+              <span class="speed-label" id="speed-label">5×</span>
+              <input type="range" id="speed-slider" min="1" max="10" value="5" step="1" class="slider" />
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h2 class="section-title">Legend</h2>
+            <div class="legend">
+              <div class="legend-item"><span class="legend-dot source"></span> Source</div>
+              <div class="legend-item"><span class="legend-dot target"></span> Target</div>
+              <div class="legend-item"><span class="legend-dot wall"></span> Wall</div>
+              <div class="legend-item"><span class="legend-dot visited"></span> Visited</div>
+              <div class="legend-item"><span class="legend-dot frontier"></span> Frontier</div>
+              <div class="legend-item"><span class="legend-dot path"></span> Path</div>
+            </div>
+          </div>
+
+          <div class="action-btns">
+            <button class="btn-primary" id="btn-run" aria-label="Run selected algorithm">
+              <span id="run-btn-icon">▶</span> <span id="run-btn-text">Run</span>
+            </button>
+            <button class="btn-ghost" id="btn-clear-path" aria-label="Clear path">Clear Path</button>
+            <button class="btn-ghost danger" id="btn-clear-all" aria-label="Clear everything">Clear All</button>
+          </div>
+        </aside>
+
+        <!-- Grid + Stats -->
+        <div class="grid-area">
+          <div class="grid-toolbar">
+            <div class="tool-hint" id="tool-hint">
+              <span class="dot-pulse"></span>
+              Click to place walls · Drag source/target to move · Press <kbd>R</kbd> to run
+            </div>
+            <div class="mode-btns">
+              <button class="mode-btn active" data-mode="wall" id="mode-wall" aria-label="Wall mode">✏ Wall</button>
+              <button class="mode-btn" data-mode="source" id="mode-source" aria-label="Source mode">🟢 Source</button>
+              <button class="mode-btn" data-mode="target" id="mode-target" aria-label="Target mode">🔴 Target</button>
+            </div>
+          </div>
+
+          <div class="grid-wrapper" id="grid-wrapper">
+            <div class="grid-container" id="grid-container"></div>
+          </div>
+
+          <!-- Stats bar -->
+          <div class="stats-bar glass-panel" id="stats-bar">
+            <div class="stat-item" id="stat-algo">
+              <span class="stat-label">Algorithm</span>
+              <span class="stat-value" id="sv-algo">—</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">Nodes Visited</span>
+              <span class="stat-value" id="sv-visited">—</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">Path Length</span>
+              <span class="stat-value" id="sv-path">—</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">Cost</span>
+              <span class="stat-value" id="sv-cost">—</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">Time</span>
+              <span class="stat-value" id="sv-time">—</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">Status</span>
+              <span class="stat-value" id="sv-status">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPARE TAB -->
+    <section class="tab-panel" id="panel-compare">
+      <div class="compare-header">
+        <p class="compare-desc">Run all 6 algorithms simultaneously on the same grid and compare results side-by-side.</p>
+        <div class="compare-actions">
+          <button class="btn-secondary" id="btn-compare-maze">🌀 Generate Maze</button>
+          <button class="btn-primary" id="btn-run-compare">⚡ Run All Algorithms</button>
+        </div>
+      </div>
+      <div class="compare-grid-6" id="compare-grid-6">
+        <!-- 6 mini-grids injected by JS -->
+      </div>
+      <div class="compare-stats-table-wrap">
+        <table class="compare-table" id="compare-table">
+          <thead>
+            <tr>
+              <th>Algorithm</th>
+              <th>Nodes Visited</th>
+              <th>Path Length</th>
+              <th>Cost</th>
+              <th>Time (ms)</th>
+              <th>Optimal?</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="compare-table-body">
+            <tr><td colspan="7" class="empty-state">Run algorithms to see results</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- BENCHMARK TAB -->
+    <section class="tab-panel" id="panel-benchmark">
+      <div class="benchmark-header">
+        <div>
+          <h2 class="section-title">Performance Benchmark</h2>
+          <p class="compare-desc">Runtime and nodes-visited comparison across grid sizes.</p>
+        </div>
+        <button class="btn-primary" id="btn-run-benchmark">
+          <span id="bench-btn-text">▶ Run Benchmark</span>
+        </button>
+      </div>
+
+      <div class="benchmark-charts">
+        <div class="chart-card glass-panel">
+          <h3 class="chart-title">⏱ Runtime (ms)</h3>
+          <canvas id="chart-time" width="600" height="320"></canvas>
+        </div>
+        <div class="chart-card glass-panel">
+          <h3 class="chart-title">🔍 Nodes Visited</h3>
+          <canvas id="chart-nodes" width="600" height="320"></canvas>
+        </div>
+      </div>
+
+      <div class="benchmark-table-wrap">
+        <div id="benchmark-table-container">
+          <p class="empty-state">Run the benchmark to see detailed results.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loading-overlay" style="display:none">
+    <div class="loading-spinner"></div>
+    <p id="loading-text">Running…</p>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/grid.js"></script>
+  <script src="/js/animator.js"></script>
+  <script src="/js/benchmark.js"></script>
+  <script src="/js/controls.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
